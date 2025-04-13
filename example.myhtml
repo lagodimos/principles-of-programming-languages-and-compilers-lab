@@ -1,0 +1,24 @@
+<MYHTML>
+  <head>
+    <title>Principles of Programming Languages & Compilers</title>
+    <meta name="description" content="Flex Bison Tutorial">
+    <meta charset="UTF-8">
+    <meta name="author" content="Input your name here">
+  </head>
+  <body>
+    <p id="pari">This is my project.</p>
+    <div id="divl1" style="color: blue">
+      <a id="hyper" href="https://arxes.ceid.gr">
+        Here comes an image.
+        <img src="image.jpg" id="myimg123" alt="Example Image">
+      </a>
+    </div>
+    <form id="form1">
+      <label for="name" id="label1">Name:</label>
+      <input type="text" id="name">
+      <label id="label2" for="lastname">Last Name:</label>
+      <input type="text" id="lastname">
+      <input id="submit" type="Submit" value='Submit "it"'>
+    </form>
+  </body>
+</MYHTML>
