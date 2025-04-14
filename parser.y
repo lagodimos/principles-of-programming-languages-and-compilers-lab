@@ -5,52 +5,47 @@ int yylex();
 void yyerror(const char *s);
 %}
 
-%token GTHAN
-%token LTHAN_SLASH
+%define parse.error verbose
 
-%token MYHTML
-%token MYHTML_C
-%token HEAD
-%token HEAD_C
-%token BODY
-%token BODY_C
-%token TITLE
-%token TITLE_C
-%token META
-%token P
-%token P_C
-%token DIV
-%token DIV_C
-%token A
-%token A_C
-%token IMG
-%token FORM
-%token FORM_C
-%token LABEL
-%token LABEL_C
-%token INPUT
-%token INPUT_C
+%token OPEN_TAG_START
+%token OPEN_TAG_END
+%token CLOSE_TAG
 
 %token TEXT
+
+%token ATTRIBUTE_NAME
+%token EQUALS
+%token ATTRIBUTE_VALUE
+
+%token TEOF
 
 %start myhtml
 
 %%
 
-// MYHTML: "<MYHTML>", MYHTML_C: "</MYHTML>"
-// myhtml is the entire myhtml tag
-
-myhtml: MYHTML myhtml_content MYHTML_C
+myhtml: OPEN_TAG_START OPEN_TAG_END myhtml_content CLOSE_TAG TEOF
 myhtml_content: head body | body
 
-head: HEAD head_content HEAD_C
+head: OPEN_TAG_START OPEN_TAG_END head_content CLOSE_TAG
 head_content: title optional_meta_tags
 
-optional_meta_tags: %empty
+title: OPEN_TAG_START OPEN_TAG_END TEXT CLOSE_TAG
 
-title: TITLE TEXT TITLE_C
+optional_meta_tags: meta optional_meta_tags
+    | %empty
+meta: OPEN_TAG_START attributes OPEN_TAG_END
 
-body: %empty
+attributes: attribute attributes {}
+    | %empty
+
+attribute: ATTRIBUTE_NAME EQUALS ATTRIBUTE_VALUE
+
+body: OPEN_TAG_START OPEN_TAG_END body_content CLOSE_TAG
+body_content: TEXT body_content
+    | body_content_tag body_content
+    | %empty
+
+body_content_tag: OPEN_TAG_START attributes OPEN_TAG_END body_content CLOSE_TAG
 
 %%
 
