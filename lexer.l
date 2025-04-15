@@ -7,9 +7,23 @@
 %%
 
 "<"[a-zA-Z][a-zA-Z0-9]* {
-    printf("OPEN_TAG_START:\t\t|%s\n", yytext);
+    char tag_name[10];
+    sscanf(yytext+1, "%9[a-zA-Z0-9]", tag_name);
+
+    const char* self_closing_tags[] = {"meta", "img", "input"};
+    int num_tags = sizeof(self_closing_tags) / sizeof(self_closing_tags[0]);
+
+    for (int i = 0; i < num_tags; i++) {
+        if (strcmp(tag_name, self_closing_tags[i]) == 0) {
+            printf("SELF_CLOSING_TAG_START:\t|%s\n", yytext);
+            BEGIN(ATTRIBUTES);
+            return SELF_CLOSING_TAG_START;
+        }
+    }
+
+    printf("OPEN_PAIRED_TAG_START:\t|%s\n", yytext);
     BEGIN(ATTRIBUTES);
-    return OPEN_TAG_START;
+    return OPEN_PAIRED_TAG_START;
 }
 
 <ATTRIBUTES>">" {
@@ -54,11 +68,6 @@
 
 . {
     printf("Unexpected token: %c", yytext[0]);
-}
-
-<<EOF>> {
-    printf("EOF\n");
-    return TEOF;
 }
 
 %%
