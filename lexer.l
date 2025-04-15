@@ -6,35 +6,123 @@
 
 %%
 
-"<"[a-zA-Z][a-zA-Z0-9]* {
-    char tag_name[10];
-    sscanf(yytext+1, "%9[a-zA-Z0-9]", tag_name);
+"<MYHTML>" {
+    printf("MYHTML_OPEN:\t\t|%s\n", yytext);
+    return MYHTML_OPEN;
+}
 
-    const char* self_closing_tags[] = {"meta", "img", "input"};
-    int num_tags = sizeof(self_closing_tags) / sizeof(self_closing_tags[0]);
+"</MYHTML>" {
+    printf("MYHTML_CLOSE:\t\t|%s\n", yytext);
+    return MYHTML_CLOSE;
+}
 
-    for (int i = 0; i < num_tags; i++) {
-        if (strcmp(tag_name, self_closing_tags[i]) == 0) {
-            printf("SELF_CLOSING_TAG_START:\t|%s\n", yytext);
-            BEGIN(ATTRIBUTES);
-            return SELF_CLOSING_TAG_START;
-        }
-    }
+"<head>" {
+    printf("HEAD_OPEN:\t\t|%s\n", yytext);
+    return HEAD_OPEN;
+}
 
-    printf("OPEN_PAIRED_TAG_START:\t|%s\n", yytext);
+"</head>" {
+    printf("HEAD_CLOSE:\t\t|%s\n", yytext);
+    return HEAD_CLOSE;
+}
+
+"<title>" {
+    printf("TITLE_OPEN:\t\t|%s\n", yytext);
+    return TITLE_OPEN;
+}
+
+"</title>" {
+    printf("TITLE_CLOSE:\t\t|%s\n", yytext);
+    return TITLE_CLOSE;
+}
+
+"<meta " {
+    printf("META_START:\t\t|%s\n", yytext);
     BEGIN(ATTRIBUTES);
-    return OPEN_PAIRED_TAG_START;
+    return META_START;
+}
+
+"<body>" {
+    printf("BODY_OPEN:\t\t|%s\n", yytext);
+    return BODY_OPEN;
+}
+
+"</body>" {
+    printf("HEAD_CLOSE:\t\t|%s\n", yytext);
+    return BODY_CLOSE;
+}
+
+"<p " {
+    printf("P_OPEN_START:\t\t|%s\n", yytext);
+    BEGIN(ATTRIBUTES);
+    return P_OPEN_START;
+}
+
+"</p>" {
+    printf("P_CLOSE:\t\t|%s\n", yytext);
+    return P_CLOSE;
+}
+
+"<a " {
+    printf("A_OPEN_START:\t\t|%s\n", yytext);
+    BEGIN(ATTRIBUTES);
+    return A_OPEN_START;
+}
+
+"</a>" {
+    printf("A_CLOSE:\t\t|%s\n", yytext);
+    return A_CLOSE;
+}
+
+"<img " {
+    printf("IMG_START:\t\t|%s\n", yytext);
+    BEGIN(ATTRIBUTES);
+    return IMG_START;
+}
+
+"<form " {
+    printf("FORM_OPEN_START:\t|%s\n", yytext);
+    BEGIN(ATTRIBUTES);
+    return FORM_OPEN_START;
+}
+
+"</form>" {
+    printf("FORM_CLOSE:\t\t|%s\n", yytext);
+    return FORM_CLOSE;
+}
+
+"<div " {
+    printf("DIV_OPEN_START:\t\t|%s\n", yytext);
+    BEGIN(ATTRIBUTES);
+    return DIV_OPEN_START;
+}
+
+"</div>" {
+    printf("DIV_CLOSE:\t\t|%s\n", yytext);
+    return DIV_CLOSE;
+}
+
+"<input " {
+    printf("INPUT_START:\t\t|%s\n", yytext);
+    BEGIN(ATTRIBUTES);
+    return INPUT_START;
+}
+
+"<label " {
+    printf("LABEL_OPEN_START:\t|%s\n", yytext);
+    BEGIN(ATTRIBUTES);
+    return LABEL_OPEN_START;
+}
+
+"</label>" {
+    printf("LABEL_CLOSE:\t\t|%s\n", yytext);
+    return LABEL_CLOSE;
 }
 
 <ATTRIBUTES>">" {
     printf("OPEN_TAG_END:\t\t|%s\n", yytext);
     BEGIN(INITIAL);
-    return OPEN_TAG_END;
-}
-
-"</"[a-zA-Z][a-zA-Z0-9]*">" {
-    printf("CLOSE_TAG:\t\t|%s\n", yytext);
-    return CLOSE_TAG;
+    return TAG_END;
 }
 
 <INITIAL>[^< \t\n][^<]* {
