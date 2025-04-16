@@ -56,28 +56,38 @@ optional_meta_tags: %empty
 meta: META_START attributes TAG_END
 
 body: BODY_OPEN body_content BODY_CLOSE
-body_content: %empty
+body_content: div_content   /* %empty, p, a, img, form */
     | TEXT body_content
-    | p body_content
-    | a body_content
-    | img body_content
-    | form body_content
     | div body_content
-    | input body_content
-    | label body_content
 
-p: P_OPEN_START attributes TAG_END body_content P_CLOSE
-a: A_OPEN_START attributes TAG_END body_content A_CLOSE
+p: P_OPEN_START attributes TAG_END optional_text P_CLOSE
+
+a: A_OPEN_START attributes TAG_END a_content A_CLOSE
+a_content: optional_text
+        | optional_text img optional_text
+
 img: IMG_START attributes TAG_END
+
 form: FORM_OPEN_START attributes TAG_END form_content FORM_CLOSE
 form_content: label optional_form_content
             | input optional_form_content
 optional_form_content: %empty
     | label form_content
     | input form_content
+
 div: DIV_OPEN_START attributes TAG_END body_content DIV_CLOSE
+div_content: %empty
+    | p body_content
+    | a body_content
+    | img body_content
+    | form body_content
+
 input: INPUT_START attributes TAG_END
+
 label: LABEL_OPEN_START attributes TAG_END TEXT LABEL_CLOSE
+
+optional_text: %empty
+            | TEXT
 
 attributes: %empty
     | attribute attributes
