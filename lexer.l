@@ -1,5 +1,9 @@
 %{
 #include "parser.tab.h"
+
+#define MAX_NAME_VAL 30
+
+extern void array_push(char string[]);
 %}
 
 %x ATTRIBUTES
@@ -131,6 +135,10 @@
 }
 
 <ATTRIBUTES>[a-zA-Z]+ {
+    char *attribute = malloc(sizeof(char) * MAX_NAME_VAL);
+    strcpy(attribute, yytext);
+    array_push(attribute);
+
     printf("ATTRIBUTE_NAME:\t|%s\n", yytext);
     return ATTRIBUTE_NAME;
 }
@@ -140,12 +148,14 @@
     return EQUALS;
 }
 
-<ATTRIBUTES>\"[^"]*\" {
-    printf("ATTRIBUTE_VALUE:\t|%s\n", yytext);
-    return ATTRIBUTE_VALUE;
-}
+<ATTRIBUTES>\"[^"]*\"|'[^']*' {
+    /* Matches single or double quoted strings */
 
-<ATTRIBUTES>'[^']*' {
+    char *value = malloc(sizeof(char) * MAX_NAME_VAL);
+    strcpy(value, &yytext[1]);
+    value[strlen(value) - 1] = '\0';
+    array_push(value);
+
     printf("ATTRIBUTE_VALUE:\t|%s\n", yytext);
     return ATTRIBUTE_VALUE;
 }
