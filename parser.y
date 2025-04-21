@@ -1,20 +1,8 @@
 %{
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-#define ID "id"
-#define CHARSET "charset"
-#define NAME "name"
-#define CONTENT "content"
-#define STYLE "style"
-#define SRC "src"
-#define ALT "alt"
-#define WIDTH "width"
-#define HEIGHT "height"
-#define TYPE "type"
-#define VALUE "value"
-#define FOR "for"
 
 typedef struct attribute {
     const char *name;
@@ -41,6 +29,8 @@ attr new_attribute(const char *name, int max_occurrences, int is_optional);
 void check_meta_attributes();
 void check_attributes(const char *name, int count, attr attributes[]);
 attr *find_attribute(const char *name, int count, attr attributes[]);
+
+void check_value_is_natural(char *string);
 
 void required_attribute_not_found(const char *tag, const char *name);
 void exceeded_occur(const char *tag, const char *name, int max);
@@ -245,13 +235,13 @@ void check_meta_attributes() {
     int content_count = 0;
 
     for (int i = 0; attributes_key_values[i] != NULL; i += 2) {
-        if (strcmp(attributes_key_values[i], CHARSET) == 0) {
+        if (strcmp(attributes_key_values[i], "charset") == 0) {
             charset_count++;
         }
-        else if (strcmp(attributes_key_values[i], NAME) == 0) {
+        else if (strcmp(attributes_key_values[i], "name") == 0) {
             name_count++;
         }
-        else if (strcmp(attributes_key_values[i], CONTENT) == 0) {
+        else if (strcmp(attributes_key_values[i], "content") == 0) {
             content_count++;
         }
         else {
@@ -282,6 +272,14 @@ void check_attributes(const char *tag, int count, attr attributes[]) {
         else {
             invalid_attribute(tag, attributes_key_values[i]);
         }
+
+        /* Check attribute values */
+
+        if (strcmp(attributes_key_values[i], "width") == 0 ||
+            strcmp(attributes_key_values[i], "height") == 0
+        ) {
+            check_value_is_natural(attributes_key_values[i+1]);
+        }
     }
 
     for (int i = 0; i < count; i++) {
@@ -299,6 +297,16 @@ attr *find_attribute(const char *name, int count, attr attributes[]) {
     }
 
     return NULL;
+}
+
+void check_value_is_natural(char *string) {
+    char error[] = "Value of height/width must be a natural number.";
+
+    for (int i = 0; string[i] != '\0'; i++) {
+        if (! isdigit(string[i])) {
+            yyerror(error);
+        }
+    }
 }
 
 void required_attribute_not_found(const char *tag, const char *name) {
