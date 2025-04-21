@@ -4,6 +4,8 @@
 #define MAX_NAME_VAL 30
 
 extern void array_push(char string[]);
+
+extern char text[];
 %}
 
 %x ATTRIBUTES
@@ -131,6 +133,7 @@ extern void array_push(char string[]);
 
 <INITIAL>[^< \t\n][^<]* {
     printf("TEXT:\t\t\t|%s\n", yytext);
+    strcpy(text, yytext);
     return TEXT;
 }
 

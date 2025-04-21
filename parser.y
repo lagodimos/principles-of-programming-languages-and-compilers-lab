@@ -14,12 +14,16 @@ typedef struct attribute {
 int yylex();
 void yyerror(const char *s);
 
+char text[1000];
+
 int top = -1;
 char *attributes_key_values[100];
 /*  e.g.
         [0] = name
 top---->[1] = content
 */
+
+int count_trailing_whitespace(const char *str);
 
 void array_push(char string[]);
 void array_reset();
@@ -82,7 +86,14 @@ myhtml_content: head body | body
 head: HEAD_OPEN head_content HEAD_CLOSE
 head_content: title optional_meta_tags
 
-title: TITLE_OPEN TEXT TITLE_CLOSE
+title: TITLE_OPEN TEXT TITLE_CLOSE {
+    int len = strlen(text) - count_trailing_whitespace(text);
+
+    if (len > 60) {
+        char error[] = "Title length should not exceed 60 characters.";
+        yyerror(error);
+    }
+}
 
 optional_meta_tags: %empty
     | meta optional_meta_tags
@@ -197,6 +208,18 @@ attributes: %empty
 attribute: ATTRIBUTE_NAME EQUALS ATTRIBUTE_VALUE
 
 %%
+
+int count_trailing_whitespace(const char *str) {
+    int len = strlen(str);
+    int count = 0;
+    if (len == 0) return 0;
+    int i = len - 1;
+    while (i >= 0 && isspace((unsigned char)str[i])) {
+        count++;
+        i--;
+    }
+    return count;
+}
 
 void array_push(char string[]) {
     top++;
