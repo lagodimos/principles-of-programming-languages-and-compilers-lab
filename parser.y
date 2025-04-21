@@ -35,6 +35,7 @@ void check_attributes(const char *name, int count, attr attributes[]);
 attr *find_attribute(const char *name, int count, attr attributes[]);
 
 void check_value_is_natural(char *string);
+void check_if_is_valid_url(char *attribute, char *value);
 
 void required_attribute_not_found(const char *tag, const char *name);
 void exceeded_occur(const char *tag, const char *name, int max);
@@ -303,6 +304,13 @@ void check_attributes(const char *tag, int count, attr attributes[]) {
         ) {
             check_value_is_natural(attributes_key_values[i+1]);
         }
+
+        if (
+            strcmp(attributes_key_values[i], "src") == 0 ||
+            strcmp(attributes_key_values[i], "href") == 0
+        ) {
+            check_if_is_valid_url(attributes_key_values[i], attributes_key_values[i+1]);
+        }
     }
 
     for (int i = 0; i < count; i++) {
@@ -329,6 +337,35 @@ void check_value_is_natural(char *string) {
         if (! isdigit(string[i])) {
             yyerror(error);
         }
+    }
+}
+
+void check_if_is_valid_url(char *attribute, char *value) {
+    char error[100];
+
+    int valid = 1;
+    int i;
+    for (i = 0; valid == 1 && i < strlen(value); i++) {
+        if (
+            value[i] < 32 ||
+            value[i] == 127 ||
+            value[i] == '<' ||
+            value[i] == '>' ||
+            value[i] == '{' ||
+            value[i] == '}' ||
+            value[i] == '|' ||
+            value[i] == '\\' ||
+            value[i] == '^' ||
+            value[i] == '~' ||
+            value[i] == '"'
+        ) {
+            valid = 0;
+        }
+    }
+
+    if (valid == 0) {
+        sprintf(error, "Not allowed character in %s attribute: '%c'", attribute, value[--i]);
+        yyerror(error);
     }
 }
 
