@@ -7,7 +7,7 @@ TARGET = myhtml
 all: clean myhtml
 
 myhtml: parser.tab.c lexer.c
-	$(CC) -o $(TARGET) main.c parser.tab.c lexer.c -lfl
+	$(CC) -o $(TARGET) main.c parser.c parser.tab.c lexer.c -lfl
 
 parser.tab.c parser.tab.h: parser.y
 	bison -d parser.y

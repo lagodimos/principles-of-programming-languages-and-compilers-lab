@@ -1,9 +1,14 @@
 %{
 #include "parser.tab.h"
 
+#include "parser.h"
+
 #define MAX_NAME_VAL 30
 
-extern void array_push(char string[]);
+extern int top;
+extern Attribute attributes[];
+
+extern char text[];
 %}
 
 %x ATTRIBUTES
@@ -131,13 +136,16 @@ extern void array_push(char string[]);
 
 <INITIAL>[^< \t\n][^<]* {
     printf("TEXT:\t\t\t|%s\n", yytext);
+    strcpy(text, yytext);
     return TEXT;
 }
 
 <ATTRIBUTES>[a-zA-Z]+ {
     char *attribute = malloc(sizeof(char) * MAX_NAME_VAL);
     strcpy(attribute, yytext);
-    array_push(attribute);
+
+    top++;
+    attributes[top].name = attribute;
 
     printf("ATTRIBUTE_NAME:\t|%s\n", yytext);
     return ATTRIBUTE_NAME;
@@ -154,7 +162,8 @@ extern void array_push(char string[]);
     char *value = malloc(sizeof(char) * MAX_NAME_VAL);
     strcpy(value, &yytext[1]);
     value[strlen(value) - 1] = '\0';
-    array_push(value);
+
+    attributes[top].value = value;
 
     printf("ATTRIBUTE_VALUE:\t|%s\n", yytext);
     return ATTRIBUTE_VALUE;
