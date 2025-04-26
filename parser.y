@@ -5,6 +5,12 @@ char text[1000];
 
 int top = -1;
 Attribute attributes[100];
+
+int ids_top = -1;
+ID ids[100];
+
+int for_label_ids_top = -1;
+char *for_label_ids[100];
 %}
 
 %define parse.error verbose
@@ -45,7 +51,9 @@ Attribute attributes[100];
 
 %%
 
-myhtml: MYHTML_OPEN myhtml_content MYHTML_CLOSE
+myhtml: MYHTML_OPEN myhtml_content MYHTML_CLOSE {
+    check_for_ids(for_label_ids_top, for_label_ids, ids_top, ids);
+}
 myhtml_content: head body | body
 
 head: HEAD_OPEN head_content HEAD_CLOSE
@@ -74,6 +82,9 @@ p: P_OPEN_START attributes TAG_END {
         rules[1] = new_attribute_rule("style", 1, 1);
         check_attributes(&top, attributes, "p", rule_count, rules);
 
+        char *id = find_attribute("id", top, attributes)->value;
+        append_id(&ids_top, ids, id, "p");
+
         array_reset(&top, attributes);
     }
     optional_text P_CLOSE
@@ -84,6 +95,9 @@ a: A_OPEN_START attributes TAG_END {
         rules[0] = new_attribute_rule("id", 1, 0);
         rules[1] = new_attribute_rule("href", 1, 0);
         check_attributes(&top, attributes, "a", rule_count, rules);
+
+        char *id = find_attribute("id", top, attributes)->value;
+        append_id(&ids_top, ids, id, "a");
 
         array_reset(&top, attributes);
     }
@@ -101,6 +115,9 @@ img: IMG_START attributes TAG_END {
         rules[4] = new_attribute_rule("height", 1, 1);
         check_attributes(&top, attributes, "img", rule_count, rules);
 
+        char *id = find_attribute("id", top, attributes)->value;
+        append_id(&ids_top, ids, id, "img");
+
         array_reset(&top, attributes);
     }
 
@@ -109,6 +126,9 @@ form: FORM_OPEN_START attributes TAG_END {
         AttributeRule rules[rule_count];
         rules[0] = new_attribute_rule("id", 1, 0);
         check_attributes(&top, attributes, "form", rule_count, rules);
+
+        char *id = find_attribute("id", top, attributes)->value;
+        append_id(&ids_top, ids, id, "form");
 
         array_reset(&top, attributes);
     }
@@ -125,6 +145,9 @@ div: DIV_OPEN_START attributes TAG_END {
         rules[0] = new_attribute_rule("id", 1, 0);
         rules[1] = new_attribute_rule("style", 1, 1);
         check_attributes(&top, attributes, "div", rule_count, rules);
+
+        char *id = find_attribute("id", top, attributes)->value;
+        append_id(&ids_top, ids, id, "div");
 
         array_reset(&top, attributes);
     }
@@ -144,6 +167,9 @@ input: INPUT_START attributes TAG_END {
         rules[3] = new_attribute_rule("style", 1, 1);
         check_attributes(&top, attributes, "input", rule_count, rules);
 
+        char *id = find_attribute("id", top, attributes)->value;
+        append_id(&ids_top, ids, id, "input");
+
         array_reset(&top, attributes);
     }
 
@@ -154,6 +180,12 @@ label: LABEL_OPEN_START attributes TAG_END {
         rules[1] = new_attribute_rule("for", 1, 0);
         rules[2] = new_attribute_rule("value", 1, 1);
         check_attributes(&top, attributes, "label", rule_count, rules);
+
+        char *id = find_attribute("id", top, attributes)->value;
+        append_id(&ids_top, ids, id, "label");
+
+        char *for_id = find_attribute("for", top, attributes)->value;
+        append_for_id(&for_label_ids_top, for_label_ids, for_id);
 
         array_reset(&top, attributes);
     }

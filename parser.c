@@ -5,7 +5,7 @@
 
 #include "parser.h"
 
-void check_title(char *text) {
+void check_title(char text[]) {
     int len = strlen(text) - count_trailing_whitespace(text);
 
     if (len > 60) {
@@ -14,16 +14,26 @@ void check_title(char *text) {
     }
 }
 
-int count_trailing_whitespace(const char *str) {
-    int len = strlen(str);
+int count_trailing_whitespace(const char string[]) {
+    int len = strlen(string);
     int count = 0;
     if (len == 0) return 0;
     int i = len - 1;
-    while (i >= 0 && isspace((unsigned char)str[i])) {
+    while (i >= 0 && isspace((unsigned char)string[i])) {
         count++;
         i--;
     }
     return count;
+}
+
+Attribute *find_attribute(char name[], int top, Attribute attributes[]) {
+    for (int i = 0; i < top + 1; i++) {
+        if (strcmp(name, attributes[i].name) == 0) {
+            return &attributes[i];
+        }
+    }
+
+    return NULL;
 }
 
 void array_reset(int *top, Attribute attributes[]) {
@@ -41,7 +51,79 @@ void array_print(int *top, Attribute attributes[]) {
     }
 }
 
-AttributeRule new_attribute_rule(const char *name, int max_occurrences, int is_optional) {
+void append_id(int *ids_top, ID ids[], char value[], char tag_type[]) {
+    char *id = malloc((strlen(value) + 1) * sizeof(char));
+    strcpy(id, value);
+    value = id;
+
+    for (int i = 0; i < *ids_top + 1; i++) {
+        if (strcmp(value, ids[i].value) == 0) {
+            char error[100];
+            sprintf(error, "Second tag with id '%s'.", ids[i].value);
+            yyerror(error);
+        }
+    }
+
+    (*ids_top)++;
+    ids[*ids_top].tag_type = tag_type;
+    ids[*ids_top].value = value;
+
+    print_ids(*ids_top, ids);
+}
+
+void print_ids(int top, ID ids[]) {
+    printf("--- IDs ---\n");
+    for (int i = 0; i < top + 1; i++) {
+        printf("%s: %s\n", ids[i].tag_type, ids[i].value);
+    }
+}
+
+void append_for_id(int *for_ids_top, char *for_ids[], char for_id[]) {
+    for (int i = 0; i < *for_ids_top + 1; i++) {
+        if (strcmp(for_id, for_ids[*for_ids_top]) == 0) {
+            char error[100];
+            sprintf(error, "Second for attribute with value '%s'", for_id);
+            yyerror(error);
+        }
+    }
+
+    (*for_ids_top)++;
+    for_ids[*for_ids_top] = malloc((strlen(for_id) + 1) * sizeof(char));
+    strcpy(for_ids[*for_ids_top], for_id);
+
+    print_for_ids(*for_ids_top, for_ids);
+}
+
+void check_for_ids(int for_ids_top, char *for_ids[], int ids_top, ID ids[]) {
+    int found_tag_with_id;
+
+    for (int i = 0; i < for_ids_top + 1; i++) {
+        found_tag_with_id = 0;
+
+        for (int j = 0; j < ids_top + 1 && found_tag_with_id == 0; j++) {
+            if (strcmp(for_ids[i], ids[j].value) == 0 &&
+                strcmp("input", ids[j].tag_type) == 0
+            ) {
+                found_tag_with_id = 1;
+            }
+        }
+
+        if (found_tag_with_id == 0) {
+            char error[100];
+            sprintf(error, "Could not find input tag with id '%s'", for_ids[i]);
+            yyerror(error);
+        }
+    }
+}
+
+void print_for_ids(int for_ids_top, char *for_ids[]) {
+    printf("--- for IDs ---\n");
+    for (int i = 0; i < for_ids_top + 1; i++) {
+        printf("%s\n", for_ids[i]);
+    }
+}
+
+AttributeRule new_attribute_rule(const char name[], int max_occurrences, int is_optional) {
     AttributeRule rule;
     rule.name = name;
     rule.max_occurrences = max_occurrences;
@@ -80,7 +162,7 @@ void check_meta_attributes(int *top, Attribute attributes[]) {
     }
 }
 
-void check_attributes(int *top, Attribute attributes[], const char *tag, int rule_count, AttributeRule rules[]) {
+void check_attributes(int *top, Attribute attributes[], const char tag[], int rule_count, AttributeRule rules[]) {
     AttributeRule *rule;
 
     for (int i = 0; i < *top + 1; i++) {
@@ -109,6 +191,10 @@ void check_attributes(int *top, Attribute attributes[], const char *tag, int rul
         ) {
             check_if_is_valid_url(attributes[i].name, attributes[i].value);
         }
+
+        if (strcmp(attributes[i].name, "style") == 0) {
+            check_style_attr(attributes[i].value);
+        }
     }
 
     for (int i = 0; i < rule_count; i++) {
@@ -118,7 +204,7 @@ void check_attributes(int *top, Attribute attributes[], const char *tag, int rul
     }
 }
 
-AttributeRule *find_attribute_rule(const char *name, int rule_count, AttributeRule rules[]) {
+AttributeRule *find_attribute_rule(const char name[], int rule_count, AttributeRule rules[]) {
     for (int i = 0; i < rule_count; i++) {
         if (strcmp(name, rules[i].name) == 0) {
             return &rules[i];
@@ -128,7 +214,7 @@ AttributeRule *find_attribute_rule(const char *name, int rule_count, AttributeRu
     return NULL;
 }
 
-void check_value_is_natural(char *string) {
+void check_value_is_natural(char string[]) {
     char error[] = "Value of height/width must be a natural number.";
 
     for (int i = 0; string[i] != '\0'; i++) {
@@ -138,7 +224,7 @@ void check_value_is_natural(char *string) {
     }
 }
 
-void check_if_is_valid_url(char *attribute, char *value) {
+void check_if_is_valid_url(char attribute[], char value[]) {
     char error[100];
 
     int valid = 1;
@@ -167,28 +253,32 @@ void check_if_is_valid_url(char *attribute, char *value) {
     }
 }
 
-void required_attribute_not_found(const char *tag, const char *name) {
+void check_style_attr(char value[]) {
+    printf("--- Style: %s\n", value);
+}
+
+void required_attribute_not_found(const char tag[], const char name[]) {
     char error[100];
 
     sprintf(error, "Required attribute \"%s\" not found in %s tag.", name, tag);
     yyerror(error);
 }
 
-void exceeded_occur(const char *tag, const char *name, int max) {
+void exceeded_occur(const char tag[], const char name[], int max) {
     char error[100];
 
     sprintf(error, "Exceeded max occurrences of attribute \"%s\" in %s tag.", name, tag);
     yyerror(error);
 }
 
-void invalid_attribute(const char *tag, const char *name) {
+void invalid_attribute(const char tag[], const char name[]) {
     char error[100];
 
     sprintf(error, "Invalid attribute \"%s\" in %s tag ", name, tag);
     yyerror(error);
 }
 
-void yyerror(const char *s) {
+void yyerror(const char s[]) {
     fprintf(stderr, "Error: %s\n", s);
     exit(1);
 }
