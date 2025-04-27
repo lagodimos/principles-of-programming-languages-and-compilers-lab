@@ -5,8 +5,7 @@
 
 #define MAX_NAME_VAL 30
 
-extern int top;
-extern Attribute attributes[];
+extern Array attributes;
 
 extern char text[];
 %}
@@ -141,11 +140,13 @@ extern char text[];
 }
 
 <ATTRIBUTES>[a-zA-Z]+ {
+    Attribute *attrs = attributes.values;
+
     char *attribute = malloc(sizeof(char) * MAX_NAME_VAL);
     strcpy(attribute, yytext);
 
-    top++;
-    attributes[top].name = attribute;
+    attrs[*attributes.size].name = attribute;
+    (*attributes.size)++;
 
     printf("ATTRIBUTE_NAME:\t|%s\n", yytext);
     return ATTRIBUTE_NAME;
@@ -159,11 +160,13 @@ extern char text[];
 <ATTRIBUTES>\"[^"]*\"|'[^']*' {
     /* Matches single or double quoted strings */
 
+    Attribute *attrs = attributes.values;
+
     char *value = malloc(sizeof(char) * MAX_NAME_VAL);
     strcpy(value, &yytext[1]);
     value[strlen(value) - 1] = '\0';
 
-    attributes[top].value = value;
+    attrs[*attributes.size - 1].value = value;
 
     printf("ATTRIBUTE_VALUE:\t|%s\n", yytext);
     return ATTRIBUTE_VALUE;

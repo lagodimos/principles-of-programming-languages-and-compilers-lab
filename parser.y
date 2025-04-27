@@ -3,14 +3,17 @@
 
 char text[1000];
 
-int top = -1;
-Attribute attributes[100];
+Array attributes;
+int attributes_size = 0;
+Attribute attributes_array[100];
 
-int ids_top = -1;
-ID ids[100];
+Array ids;
+int ids_size = 0;
+ID ids_array[100];
 
-int for_label_ids_top = -1;
-char *for_label_ids[100];
+Array for_ids;
+int for_ids_size = 0;
+char *for_ids_array[100];
 %}
 
 %define parse.error verbose
@@ -51,8 +54,18 @@ char *for_label_ids[100];
 
 %%
 
-myhtml: MYHTML_OPEN myhtml_content MYHTML_CLOSE {
-    check_for_ids(for_label_ids_top, for_label_ids, ids_top, ids);
+myhtml: {
+    attributes.size = &attributes_size;
+    attributes.values = attributes_array;
+
+    ids.size = &ids_size;
+    ids.values = &ids_array;
+
+    for_ids.size = &for_ids_size;
+    for_ids.values = &for_ids_array;
+}
+MYHTML_OPEN myhtml_content MYHTML_CLOSE {
+    check_for_ids(for_ids, ids);
 }
 myhtml_content: head body | body
 
@@ -66,8 +79,8 @@ title: TITLE_OPEN TEXT TITLE_CLOSE {
 optional_meta_tags: %empty
     | meta optional_meta_tags
 meta: META_START attributes TAG_END {
-        check_meta_attributes(&top, attributes);
-        array_reset(&top, attributes);
+        check_meta_attributes(attributes);
+        array_reset(attributes);
     }
 
 body: BODY_OPEN body_content BODY_CLOSE
@@ -80,12 +93,12 @@ p: P_OPEN_START attributes TAG_END {
         AttributeRule rules[rule_count];
         rules[0] = new_attribute_rule("id", 1, 0);
         rules[1] = new_attribute_rule("style", 1, 1);
-        check_attributes(&top, attributes, "p", rule_count, rules);
+        check_attributes(attributes, "p", rule_count, rules);
 
-        char *id = find_attribute("id", top, attributes)->value;
-        append_id(&ids_top, ids, id, "p");
+        char *id = find_attribute("id", attributes)->value;
+        append_id(ids, id, "p");
 
-        array_reset(&top, attributes);
+        array_reset(attributes);
     }
     optional_text P_CLOSE
 
@@ -94,12 +107,12 @@ a: A_OPEN_START attributes TAG_END {
         AttributeRule rules[rule_count];
         rules[0] = new_attribute_rule("id", 1, 0);
         rules[1] = new_attribute_rule("href", 1, 0);
-        check_attributes(&top, attributes, "a", rule_count, rules);
+        check_attributes(attributes, "a", rule_count, rules);
 
-        char *id = find_attribute("id", top, attributes)->value;
-        append_id(&ids_top, ids, id, "a");
+        char *id = find_attribute("id", attributes)->value;
+        append_id(ids, id, "a");
 
-        array_reset(&top, attributes);
+        array_reset(attributes);
     }
     a_content A_CLOSE
 a_content: optional_text
@@ -113,24 +126,24 @@ img: IMG_START attributes TAG_END {
         rules[2] = new_attribute_rule("alt", 1, 0);
         rules[3] = new_attribute_rule("width", 1, 1);
         rules[4] = new_attribute_rule("height", 1, 1);
-        check_attributes(&top, attributes, "img", rule_count, rules);
+        check_attributes(attributes, "img", rule_count, rules);
 
-        char *id = find_attribute("id", top, attributes)->value;
-        append_id(&ids_top, ids, id, "img");
+        char *id = find_attribute("id", attributes)->value;
+        append_id(ids, id, "img");
 
-        array_reset(&top, attributes);
+        array_reset(attributes);
     }
 
 form: FORM_OPEN_START attributes TAG_END {
         int rule_count = 1;
         AttributeRule rules[rule_count];
         rules[0] = new_attribute_rule("id", 1, 0);
-        check_attributes(&top, attributes, "form", rule_count, rules);
+        check_attributes(attributes, "form", rule_count, rules);
 
-        char *id = find_attribute("id", top, attributes)->value;
-        append_id(&ids_top, ids, id, "form");
+        char *id = find_attribute("id", attributes)->value;
+        append_id(ids, id, "form");
 
-        array_reset(&top, attributes);
+        array_reset(attributes);
     }
     form_content FORM_CLOSE
 form_content: label optional_form_content
@@ -144,12 +157,12 @@ div: DIV_OPEN_START attributes TAG_END {
         AttributeRule rules[rule_count];
         rules[0] = new_attribute_rule("id", 1, 0);
         rules[1] = new_attribute_rule("style", 1, 1);
-        check_attributes(&top, attributes, "div", rule_count, rules);
+        check_attributes(attributes, "div", rule_count, rules);
 
-        char *id = find_attribute("id", top, attributes)->value;
-        append_id(&ids_top, ids, id, "div");
+        char *id = find_attribute("id", attributes)->value;
+        append_id(ids, id, "div");
 
-        array_reset(&top, attributes);
+        array_reset(attributes);
     }
     body_content DIV_CLOSE
 div_content: %empty
@@ -165,12 +178,12 @@ input: INPUT_START attributes TAG_END {
         rules[1] = new_attribute_rule("type", 1, 0);
         rules[2] = new_attribute_rule("value", 1, 1);
         rules[3] = new_attribute_rule("style", 1, 1);
-        check_attributes(&top, attributes, "input", rule_count, rules);
+        check_attributes(attributes, "input", rule_count, rules);
 
-        char *id = find_attribute("id", top, attributes)->value;
-        append_id(&ids_top, ids, id, "input");
+        char *id = find_attribute("id", attributes)->value;
+        append_id(ids, id, "input");
 
-        array_reset(&top, attributes);
+        array_reset(attributes);
     }
 
 label: LABEL_OPEN_START attributes TAG_END {
@@ -179,15 +192,15 @@ label: LABEL_OPEN_START attributes TAG_END {
         rules[0] = new_attribute_rule("id", 1, 0);
         rules[1] = new_attribute_rule("for", 1, 0);
         rules[2] = new_attribute_rule("value", 1, 1);
-        check_attributes(&top, attributes, "label", rule_count, rules);
+        check_attributes(attributes, "label", rule_count, rules);
 
-        char *id = find_attribute("id", top, attributes)->value;
-        append_id(&ids_top, ids, id, "label");
+        char *id = find_attribute("id", attributes)->value;
+        append_id(ids, id, "label");
 
-        char *for_id = find_attribute("for", top, attributes)->value;
-        append_for_id(&for_label_ids_top, for_label_ids, for_id);
+        char *for_id = find_attribute("for", attributes)->value;
+        append_for_id(for_ids, for_id);
 
-        array_reset(&top, attributes);
+        array_reset(attributes);
     }
     optional_text LABEL_CLOSE
 

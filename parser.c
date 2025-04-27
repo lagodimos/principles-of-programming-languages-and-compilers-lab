@@ -26,8 +26,9 @@ int count_trailing_whitespace(const char string[]) {
     return count;
 }
 
-Attribute *find_attribute(char name[], int top, Attribute attributes[]) {
-    for (int i = 0; i < top + 1; i++) {
+Attribute *find_attribute(char name[], Array attributes_array) {
+    Attribute *attributes = attributes_array.values;
+    for (int i = 0; i < *attributes_array.size; i++) {
         if (strcmp(name, attributes[i].name) == 0) {
             return &attributes[i];
         }
@@ -36,27 +37,32 @@ Attribute *find_attribute(char name[], int top, Attribute attributes[]) {
     return NULL;
 }
 
-void array_reset(int *top, Attribute attributes[]) {
-    while(*top != -1) {
-        free(attributes[*top].name);
-        free(attributes[*top].value);
+void array_reset(Array attributes_array) {
+    Attribute *attributes = attributes_array.values;
 
-        (*top)--;
+    while (*attributes_array.size != 0) {
+        (*attributes_array.size)--;
+
+        free(attributes[*attributes_array.size].name);
+        free(attributes[*attributes_array.size].value);
     }
 }
 
-void array_print(int *top, Attribute attributes[]) {
-    for (int i = 0; i < *top + 1; i++) {
+void array_print(Array attributes_array) {
+    Attribute *attributes = attributes_array.values;
+
+    for (int i = 0; i < *attributes_array.size; i++) {
         printf("%s\t%s\n", attributes[i].name, attributes[i].value);
     }
 }
 
-void append_id(int *ids_top, ID ids[], char value[], char tag_type[]) {
+void append_id(Array ids_array, char value[], char tag_type[]) {
+    ID *ids = ids_array.values;
     char *id = malloc((strlen(value) + 1) * sizeof(char));
     strcpy(id, value);
     value = id;
 
-    for (int i = 0; i < *ids_top + 1; i++) {
+    for (int i = 0; i < *ids_array.size; i++) {
         if (strcmp(value, ids[i].value) == 0) {
             char error[100];
             sprintf(error, "Second tag with id '%s'.", ids[i].value);
@@ -64,43 +70,49 @@ void append_id(int *ids_top, ID ids[], char value[], char tag_type[]) {
         }
     }
 
-    (*ids_top)++;
-    ids[*ids_top].tag_type = tag_type;
-    ids[*ids_top].value = value;
+    ids[*ids_array.size].tag_type = tag_type;
+    ids[*ids_array.size].value = value;
+    (*ids_array.size)++;
 
-    print_ids(*ids_top, ids);
+    print_ids(ids_array);
 }
 
-void print_ids(int top, ID ids[]) {
+void print_ids(Array ids_array) {
+    ID *ids = ids_array.values;
+
     printf("--- IDs ---\n");
-    for (int i = 0; i < top + 1; i++) {
+    for (int i = 0; i < *ids_array.size; i++) {
         printf("%s: %s\n", ids[i].tag_type, ids[i].value);
     }
 }
 
-void append_for_id(int *for_ids_top, char *for_ids[], char for_id[]) {
-    for (int i = 0; i < *for_ids_top + 1; i++) {
-        if (strcmp(for_id, for_ids[*for_ids_top]) == 0) {
+void append_for_id(Array for_ids_array, char for_id[]) {
+    char **for_ids = for_ids_array.values;
+
+    for (int i = 0; i < *for_ids_array.size; i++) {
+        if (strcmp(for_id, for_ids[*for_ids_array.size - 1]) == 0) {
             char error[100];
             sprintf(error, "Second for attribute with value '%s'", for_id);
             yyerror(error);
         }
     }
 
-    (*for_ids_top)++;
-    for_ids[*for_ids_top] = malloc((strlen(for_id) + 1) * sizeof(char));
-    strcpy(for_ids[*for_ids_top], for_id);
+    for_ids[*for_ids_array.size] = malloc((strlen(for_id) + 1) * sizeof(char));
+    strcpy(for_ids[*for_ids_array.size], for_id);
+    (*for_ids_array.size)++;
 
-    print_for_ids(*for_ids_top, for_ids);
+    print_for_ids(for_ids_array);
 }
 
-void check_for_ids(int for_ids_top, char *for_ids[], int ids_top, ID ids[]) {
+void check_for_ids(Array for_ids_array, Array ids_array) {
+    ID *ids = ids_array.values;
+    char **for_ids = for_ids_array.values;
     int found_tag_with_id;
 
-    for (int i = 0; i < for_ids_top + 1; i++) {
+    for (int i = 0; i < *for_ids_array.size; i++) {
         found_tag_with_id = 0;
 
-        for (int j = 0; j < ids_top + 1 && found_tag_with_id == 0; j++) {
+        for (int j = 0; j < *ids_array.size && found_tag_with_id == 0; j++) {
             if (strcmp(for_ids[i], ids[j].value) == 0 &&
                 strcmp("input", ids[j].tag_type) == 0
             ) {
@@ -116,9 +128,11 @@ void check_for_ids(int for_ids_top, char *for_ids[], int ids_top, ID ids[]) {
     }
 }
 
-void print_for_ids(int for_ids_top, char *for_ids[]) {
+void print_for_ids(Array for_ids_array) {
+    char **for_ids = for_ids_array.values;
+
     printf("--- for IDs ---\n");
-    for (int i = 0; i < for_ids_top + 1; i++) {
+    for (int i = 0; i < *for_ids_array.size; i++) {
         printf("%s\n", for_ids[i]);
     }
 }
@@ -133,12 +147,14 @@ AttributeRule new_attribute_rule(const char name[], int max_occurrences, int is_
     return rule;
 }
 
-void check_meta_attributes(int *top, Attribute attributes[]) {
+void check_meta_attributes(Array attributes_array) {
     int charset_count = 0;
     int name_count = 0;
     int content_count = 0;
 
-    for (int i = 0; i < *top + 1; i++) {
+    Attribute *attributes = attributes_array.values;
+
+    for (int i = 0; i < *attributes_array.size; i++) {
         if (strcmp(attributes[i].name, "charset") == 0) {
             charset_count++;
         }
@@ -149,6 +165,7 @@ void check_meta_attributes(int *top, Attribute attributes[]) {
             content_count++;
         }
         else {
+            array_print(attributes_array);
             invalid_attribute("meta", attributes[i].name);
         }
     }
@@ -162,10 +179,12 @@ void check_meta_attributes(int *top, Attribute attributes[]) {
     }
 }
 
-void check_attributes(int *top, Attribute attributes[], const char tag[], int rule_count, AttributeRule rules[]) {
+void check_attributes(Array attributes_array, const char tag[], int rule_count, AttributeRule rules[]) {
     AttributeRule *rule;
 
-    for (int i = 0; i < *top + 1; i++) {
+    Attribute *attributes = attributes_array.values;
+
+    for (int i = 0; i < *attributes_array.size; i++) {
         rule = find_attribute_rule(attributes[i].name, rule_count, rules);
         if (rule != NULL) {
             rule->count++;
@@ -248,7 +267,7 @@ void check_if_is_valid_url(char attribute[], char value[]) {
     }
 
     if (valid == 0) {
-        sprintf(error, "Not allowed character in %s attribute: '%c'", attribute, value[--i]);
+        sprintf(error, "Not allowed character in '%s' attribute: '%c'", attribute, value[--i]);
         yyerror(error);
     }
 }
@@ -260,21 +279,21 @@ void check_style_attr(char value[]) {
 void required_attribute_not_found(const char tag[], const char name[]) {
     char error[100];
 
-    sprintf(error, "Required attribute \"%s\" not found in %s tag.", name, tag);
+    sprintf(error, "Required attribute '%s' not found in '%s' tag.", name, tag);
     yyerror(error);
 }
 
 void exceeded_occur(const char tag[], const char name[], int max) {
     char error[100];
 
-    sprintf(error, "Exceeded max occurrences of attribute \"%s\" in %s tag.", name, tag);
+    sprintf(error, "Exceeded max occurrences of attribute '%s\' in '%s' tag.", name, tag);
     yyerror(error);
 }
 
 void invalid_attribute(const char tag[], const char name[]) {
     char error[100];
 
-    sprintf(error, "Invalid attribute \"%s\" in %s tag ", name, tag);
+    sprintf(error, "Invalid attribute '%s' in '%s' tag ", name, tag);
     yyerror(error);
 }
 

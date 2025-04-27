@@ -19,24 +19,29 @@ typedef struct tag_id {
     char *tag_type;
 } ID;
 
+typedef struct array {
+    int *size;
+    void *values;
+} Array;
+
 void check_title(char text[]);
 
 int count_trailing_whitespace(const char string[]);
 
-Attribute *find_attribute(char name[], int top, Attribute attributes[]);
-void array_reset(int *top, Attribute attributes[]);
-void array_print(int *top, Attribute attributes[]);
+Attribute *find_attribute(char name[], Array attributes_array);
+void array_reset(Array attributes_array);
+void array_print(Array attributes_array);
 
-void append_id(int *ids_top, ID ids[], char value[], char tag_type[]);
-void print_ids(int ids_top, ID ids[]);
+void append_id(Array ids_array, char value[], char tag_type[]);
+void print_ids(Array ids_array);
 
-void append_for_id(int *for_ids_top, char *for_ids[], char for_id[]);
-void check_for_ids(int for_ids_top, char *for_ids[], int ids_top, ID ids[]);
-void print_for_ids(int for_ids_top, char *for_ids[]);
+void append_for_id(Array for_ids_array, char for_id[]);
+void check_for_ids(Array for_ids_array, Array ids_array);
+void print_for_ids(Array for_ids_array);
 
 AttributeRule new_attribute_rule(const char name[], int max_occurrences, int is_optional);
-void check_meta_attributes(int *top, Attribute attributes[]);
-void check_attributes(int *top, Attribute attributes[], const char name[], int count, AttributeRule rules[]);
+void check_meta_attributes(Array attributes_array);
+void check_attributes(Array attributes_array, const char name[], int count, AttributeRule rules[]);
 AttributeRule *find_attribute_rule(const char name[], int count, AttributeRule attributes[]);
 
 void check_value_is_natural(char string[]);
