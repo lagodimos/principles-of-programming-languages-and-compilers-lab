@@ -5,17 +5,21 @@
 
 #include "parser.h"
 
-void array_reset(int *top, Attribute attributes[]) {
-    while(*top != -1) {
-        free(attributes[*top].name);
-        free(attributes[*top].value);
+void array_reset(Array attributes_array) {
+    Attribute *attributes = attributes_array.values;
 
-        (*top)--;
+    while (*attributes_array.size != 0) {
+        (*attributes_array.size)--;
+
+        free(attributes[*attributes_array.size].name);
+        free(attributes[*attributes_array.size].value);
     }
 }
 
-void array_print(int *top, Attribute attributes[]) {
-    for (int i = 0; i < *top + 1; i++) {
+void array_print(Array attributes_array) {
+    Attribute *attributes = attributes_array.values;
+
+    for (int i = 0; i < *attributes_array.size; i++) {
         printf("%s\t%s\n", attributes[i].name, attributes[i].value);
     }
 }
@@ -30,12 +34,14 @@ AttributeRule new_attribute_rule(const char name[], int max_occurrences, int is_
     return rule;
 }
 
-void check_meta_attributes(int *top, Attribute attributes[]) {
+void check_meta_attributes(Array attributes_array) {
     int charset_count = 0;
     int name_count = 0;
     int content_count = 0;
 
-    for (int i = 0; i < *top + 1; i++) {
+    Attribute *attributes = attributes_array.values;
+
+    for (int i = 0; i < *attributes_array.size; i++) {
         if (strcmp(attributes[i].name, "charset") == 0) {
             charset_count++;
         }
@@ -54,15 +60,18 @@ void check_meta_attributes(int *top, Attribute attributes[]) {
         (charset_count == 1 && name_count == 0 && content_count == 0)
         ||  (charset_count == 0 && name_count == 1 && content_count == 1)
     ))
-    {        char error[] = "Meta tag contains either one charset or one name and one content attribute.";
+    {
+        char error[] = "Meta tag contains either one charset or one name and one content attribute.";
         yyerror(error);
     }
 }
 
-void check_attributes(int *top, Attribute attributes[], const char tag[], int rule_count, AttributeRule rules[]) {
+void check_attributes(Array attributes_array, const char tag[], int rule_count, AttributeRule rules[]) {
     AttributeRule *rule;
 
-    for (int i = 0; i < *top + 1; i++) {
+    Attribute *attributes = attributes_array.values;
+
+    for (int i = 0; i < *attributes_array.size; i++) {
         rule = find_attribute_rule(attributes[i].name, rule_count, rules);
         if (rule != NULL) {
             rule->count++;

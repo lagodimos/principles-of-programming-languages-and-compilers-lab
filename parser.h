@@ -12,12 +12,17 @@ typedef struct attribute_rule {
     int count;  // used by the the checker only
 } AttributeRule;
 
-void array_reset(int *top, Attribute attributes[]);
-void array_print(int *top, Attribute attributes[]);
+typedef struct array {
+    int *size;
+    void *values;
+} Array;
+
+void array_reset(Array attributes_array);
+void array_print(Array attributes_array);
 
 AttributeRule new_attribute_rule(const char name[], int max_occurrences, int is_optional);
-void check_meta_attributes(int *top, Attribute attributes[]);
-void check_attributes(int *top, Attribute attributes[], const char name[], int count, AttributeRule rules[]);
+void check_meta_attributes(Array attributes_array);
+void check_attributes(Array attributes_array, const char name[], int count, AttributeRule rules[]);
 AttributeRule *find_attribute_rule(const char name[], int count, AttributeRule attributes[]);
 
 void check_value_is_natural(char string[]);

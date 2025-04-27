@@ -3,7 +3,8 @@
 
 char text[1000];
 
-int top = -1;
+Array attributes_array;
+int attributes_size = 0;
 Attribute attributes[100];
 %}
 
@@ -45,7 +46,11 @@ Attribute attributes[100];
 
 %%
 
-myhtml: MYHTML_OPEN myhtml_content MYHTML_CLOSE
+myhtml: {
+    attributes_array.size = &attributes_size;
+    attributes_array.values = attributes;
+}
+MYHTML_OPEN myhtml_content MYHTML_CLOSE
 myhtml_content: head body | body
 
 head: HEAD_OPEN head_content HEAD_CLOSE
@@ -56,8 +61,8 @@ title: TITLE_OPEN TEXT TITLE_CLOSE
 optional_meta_tags: %empty
     | meta optional_meta_tags
 meta: META_START attributes TAG_END {
-        check_meta_attributes(&top, attributes);
-        array_reset(&top, attributes);
+        check_meta_attributes(attributes_array);
+        array_reset(attributes_array);
     }
 
 body: BODY_OPEN body_content BODY_CLOSE
@@ -70,9 +75,9 @@ p: P_OPEN_START attributes TAG_END {
         AttributeRule rules[rule_count];
         rules[0] = new_attribute_rule("id", 1, 0);
         rules[1] = new_attribute_rule("style", 1, 1);
-        check_attributes(&top, attributes, "p", rule_count, rules);
+        check_attributes(attributes_array, "p", rule_count, rules);
 
-        array_reset(&top, attributes);
+        array_reset(attributes_array);
     }
     optional_text P_CLOSE
 
@@ -81,9 +86,9 @@ a: A_OPEN_START attributes TAG_END {
         AttributeRule rules[rule_count];
         rules[0] = new_attribute_rule("id", 1, 0);
         rules[1] = new_attribute_rule("href", 1, 0);
-        check_attributes(&top, attributes, "a", rule_count, rules);
+        check_attributes(attributes_array, "a", rule_count, rules);
 
-        array_reset(&top, attributes);
+        array_reset(attributes_array);
     }
     a_content A_CLOSE
 a_content: optional_text
@@ -97,18 +102,18 @@ img: IMG_START attributes TAG_END {
         rules[2] = new_attribute_rule("alt", 1, 0);
         rules[3] = new_attribute_rule("width", 1, 1);
         rules[4] = new_attribute_rule("height", 1, 1);
-        check_attributes(&top, attributes, "img", rule_count, rules);
+        check_attributes(attributes_array, "img", rule_count, rules);
 
-        array_reset(&top, attributes);
+        array_reset(attributes_array);
     }
 
 form: FORM_OPEN_START attributes TAG_END {
         int rule_count = 1;
         AttributeRule rules[rule_count];
         rules[0] = new_attribute_rule("id", 1, 0);
-        check_attributes(&top, attributes, "form", rule_count, rules);
+        check_attributes(attributes_array, "form", rule_count, rules);
 
-        array_reset(&top, attributes);
+        array_reset(attributes_array);
     }
     form_content FORM_CLOSE
 form_content: label optional_form_content
@@ -122,9 +127,9 @@ div: DIV_OPEN_START attributes TAG_END {
         AttributeRule rules[rule_count];
         rules[0] = new_attribute_rule("id", 1, 0);
         rules[1] = new_attribute_rule("style", 1, 1);
-        check_attributes(&top, attributes, "div", rule_count, rules);
+        check_attributes(attributes_array, "div", rule_count, rules);
 
-        array_reset(&top, attributes);
+        array_reset(attributes_array);
     }
     body_content DIV_CLOSE
 div_content: %empty
@@ -140,9 +145,9 @@ input: INPUT_START attributes TAG_END {
         rules[1] = new_attribute_rule("type", 1, 0);
         rules[2] = new_attribute_rule("value", 1, 1);
         rules[3] = new_attribute_rule("style", 1, 1);
-        check_attributes(&top, attributes, "input", rule_count, rules);
+        check_attributes(attributes_array, "input", rule_count, rules);
 
-        array_reset(&top, attributes);
+        array_reset(attributes_array);
     }
 
 label: LABEL_OPEN_START attributes TAG_END {
@@ -151,9 +156,9 @@ label: LABEL_OPEN_START attributes TAG_END {
         rules[0] = new_attribute_rule("id", 1, 0);
         rules[1] = new_attribute_rule("for", 1, 0);
         rules[2] = new_attribute_rule("value", 1, 1);
-        check_attributes(&top, attributes, "label", rule_count, rules);
+        check_attributes(attributes_array, "label", rule_count, rules);
 
-        array_reset(&top, attributes);
+        array_reset(attributes_array);
     }
     optional_text LABEL_CLOSE
 
