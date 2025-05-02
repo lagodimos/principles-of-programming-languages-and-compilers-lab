@@ -74,7 +74,7 @@ void append_id(Array ids_array, char value[], char tag_type[]) {
     ids[*ids_array.size].value = value;
     (*ids_array.size)++;
 
-    print_ids(ids_array);
+    //print_ids(ids_array);
 }
 
 void print_ids(Array ids_array) {
@@ -83,6 +83,36 @@ void print_ids(Array ids_array) {
     printf("--- IDs ---\n");
     for (int i = 0; i < *ids_array.size; i++) {
         printf("%s: %s\n", ids[i].tag_type, ids[i].value);
+    }
+}
+
+void append_href_id(Array href_ids_array, char href_id[]) {
+    char **href_ids = href_ids_array.values;
+
+    href_ids[*href_ids_array.size] = malloc((strlen(href_id) + 1) * sizeof(char));
+    strcpy(href_ids[*href_ids_array.size], href_id);
+    (*href_ids_array.size)++;
+}
+
+void check_href_ids(Array href_ids_array, Array ids_array) {
+    ID *ids = ids_array.values;
+    char **href_ids = href_ids_array.values;
+    int found_tag_with_id;
+
+    for (int i = 0; i < *href_ids_array.size; i++) {
+        found_tag_with_id = 0;
+
+        for (int j = 0; j < *ids_array.size && found_tag_with_id == 0; j++) {
+            if (strcmp(href_ids[i], ids[j].value) == 0) {
+                found_tag_with_id = 1;
+            }
+        }
+
+        if (found_tag_with_id == 0) {
+            char error[100];
+            sprintf(error, "Could not find tag with id '%s'", href_ids[i]);
+            yyerror(error);
+        }
     }
 }
 
@@ -101,7 +131,7 @@ void append_for_id(Array for_ids_array, char for_id[]) {
     strcpy(for_ids[*for_ids_array.size], for_id);
     (*for_ids_array.size)++;
 
-    print_for_ids(for_ids_array);
+    //print_for_ids(for_ids_array);
 }
 
 void check_for_ids(Array for_ids_array, Array ids_array) {
@@ -165,7 +195,7 @@ void check_meta_attributes(Array attributes_array) {
             content_count++;
         }
         else {
-            array_print(attributes_array);
+            //array_print(attributes_array);
             invalid_attribute("meta", attributes[i].name);
         }
     }
@@ -198,21 +228,33 @@ void check_attributes(Array attributes_array, const char tag[], int rule_count, 
 
         /* Check attribute values */
 
+        // Checks that need to be done when the
+        // whole page is parsed are not done here.
+        // e.g. for, href="#..."
+
         if (strcmp(attributes[i].name, "width") == 0 ||
             strcmp(attributes[i].name, "height") == 0
         ) {
             check_value_is_natural(attributes[i].value);
         }
 
+        if (strcmp(attributes[i].name, "src") == 0) {
+            check_if_is_valid_url(attributes[i].name, attributes[i].value);
+        }
+
         if (
-            strcmp(attributes[i].name, "src") == 0 ||
-            strcmp(attributes[i].name, "href") == 0
+            strcmp(attributes[i].name, "href") == 0 &&
+            attributes[i].value[0] != '#'
         ) {
             check_if_is_valid_url(attributes[i].name, attributes[i].value);
         }
 
         if (strcmp(attributes[i].name, "style") == 0) {
             check_style_attr(attributes[i].value);
+        }
+
+        if (strcmp(attributes[i].name, "type") == 0) {
+            check_type_attr(attributes[i].value);
         }
     }
 
@@ -273,7 +315,110 @@ void check_if_is_valid_url(char attribute[], char value[]) {
 }
 
 void check_style_attr(char value[]) {
-    printf("--- Style: %s\n", value);
+    char error[100];
+
+    printf("--- Style ---\n");
+
+    int top = 0;
+    char *pairs[100];
+
+    if (value[0] == ';' || value[strlen(value) - 1] == ';') {
+        yyerror("Attribute 'style' cannot start and end with ';'.");
+    }
+
+    // Check no double ;
+
+    pairs[top] = strtok(value, ";");
+
+    while (pairs[top] != NULL) {
+        top += 1;
+        pairs[top] = strtok(NULL, ";");
+    }
+
+    char *prop, *val;
+    for (int i = 0; i < top; i++) {
+
+        /* Check propertty name */
+
+        prop = strtok(pairs[i], ":");
+        while (prop[0] == ' ') {
+            prop = &prop[1];
+        }
+        while (prop[strlen(prop) - 1] == ' ') {
+            prop[strlen(prop) - 1] = '\0';
+        }
+
+        if (strcmp(prop, "background_color") != 0 &&
+            strcmp(prop, "color") != 0 &&
+            strcmp(prop, "font_family") != 0 &&
+            strcmp(prop, "font_size") != 0
+        ) {
+            sprintf(error, "Unknown property '%s'.", prop);
+            yyerror(error);
+        }
+
+        printf("'%s'\n", prop);
+
+        /* Check property value */
+
+        val = strtok(NULL, ":");
+        if (val == NULL) {
+            sprintf(error, "No value for property %s: ", prop);
+            yyerror(error);
+        }
+
+        while (val[0] == ' ') {
+            val = &val[1];
+        }
+        while (val[strlen(val) - 1] == ' ') {
+            val[strlen(val) - 1] = '\0';
+        }
+
+        printf("'%s'\n", val);
+
+        if (strcmp(prop, "font_size") == 0) {
+            int len = strlen(val);
+            int zero_or_no_number = 1;
+            int last_digit_idx = -1;
+
+            while (last_digit_idx < len - 1 && isdigit(val[last_digit_idx + 1])) {
+                if (val[last_digit_idx + 1] != '0') {
+                    zero_or_no_number = 0;
+                }
+                last_digit_idx += 1;
+            }
+
+            if (zero_or_no_number == 1 ||
+                ! (
+                    (val[len - 1] == '%' && last_digit_idx == len - 2) ||
+                    (last_digit_idx == len - 3 && len > 1 && val[len - 2] == 'p' && val[len - 1] == 'x')
+                )
+            ) {
+                yyerror("The value of property 'font_size' must be a positive integer followed by '%' or 'px'.");
+            }
+        }
+
+        if (strtok(NULL, ":") != NULL) {
+            yyerror("In style attribute properties must be be separated by ';'.");
+        }
+    }
+
+    exit(0);
+}
+
+void check_type_attr(char value[]) {
+    char error[100];
+
+    if (strcmp(value, "text") == 0 ||
+        strcmp(value, "checkbox") == 0 ||
+        strcmp(value, "radio") == 0 ||
+        strcmp(value, "submit") == 0
+    ) {
+        return;
+    }
+
+    sprintf(error, "Attribute type must have a value of 'text'/'checkbox'/'radio'/'submit'.");
+    yyerror(error);
 }
 
 void required_attribute_not_found(const char tag[], const char name[]) {
