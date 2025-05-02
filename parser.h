@@ -35,6 +35,9 @@ void array_print(Array attributes_array);
 void append_id(Array ids_array, char value[], char tag_type[]);
 void print_ids(Array ids_array);
 
+void append_href_id(Array href_ids_array, char href_id[]);
+void check_href_ids(Array href_ids_array, Array ids_array);
+
 void append_for_id(Array for_ids_array, char for_id[]);
 void check_for_ids(Array for_ids_array, Array ids_array);
 void print_for_ids(Array for_ids_array);
@@ -48,6 +51,7 @@ void check_value_is_natural(char string[]);
 void check_if_is_valid_url(char attribute[], char value[]);
 
 void check_style_attr(char value[]);
+void check_type_attr(char value[]);
 
 void required_attribute_not_found(const char tag[], const char name[]);
 void exceeded_occur(const char tag[], const char name[], int max);

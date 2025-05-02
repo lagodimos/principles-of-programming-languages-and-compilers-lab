@@ -1,4 +1,5 @@
 %{
+#include <string.h>
 #include "parser.h"
 
 char text[1000];
@@ -11,9 +12,15 @@ Array ids;
 int ids_size = 0;
 ID ids_array[100];
 
+Array href_ids;
+int href_ids_size = 0;
+char *href_ids_array[100];
+
 Array for_ids;
 int for_ids_size = 0;
 char *for_ids_array[100];
+
+int no_more_input_tags = 0;
 %}
 
 %define parse.error verbose
@@ -61,11 +68,15 @@ myhtml: {
     ids.size = &ids_size;
     ids.values = &ids_array;
 
+    href_ids.size = &href_ids_size;
+    href_ids.values = &href_ids_array;
+
     for_ids.size = &for_ids_size;
     for_ids.values = &for_ids_array;
 }
 MYHTML_OPEN myhtml_content MYHTML_CLOSE {
     check_for_ids(for_ids, ids);
+    check_href_ids(href_ids, ids);
 }
 myhtml_content: head body | body
 
@@ -112,6 +123,11 @@ a: A_OPEN_START attributes TAG_END {
         char *id = find_attribute("id", attributes)->value;
         append_id(ids, id, "a");
 
+        char *href = find_attribute("href", attributes)->value;
+        if (href[0] == '#') {
+            append_href_id(href_ids, &href[1]);
+        }
+
         array_reset(attributes);
     }
     a_content A_CLOSE
@@ -144,6 +160,8 @@ form: FORM_OPEN_START attributes TAG_END {
         append_id(ids, id, "form");
 
         array_reset(attributes);
+
+        no_more_input_tags = 0;
     }
     form_content FORM_CLOSE
 form_content: label optional_form_content
@@ -182,6 +200,16 @@ input: INPUT_START attributes TAG_END {
 
         char *id = find_attribute("id", attributes)->value;
         append_id(ids, id, "input");
+
+        char *type = find_attribute("type", attributes)->value;
+
+        if (no_more_input_tags == 1) {
+            yyerror("Tag 'form' should contain one 'input' tag of 'type' 'submit' at most.");
+        }
+
+        if (strcmp(type, "submit") == 0) {
+            no_more_input_tags = 1;
+        }
 
         array_reset(attributes);
     }
