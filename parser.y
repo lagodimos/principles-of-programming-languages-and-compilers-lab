@@ -1,5 +1,6 @@
 %{
 #include <string.h>
+#include <stdlib.h>
 #include "parser.h"
 
 char text[1000];
@@ -21,6 +22,8 @@ int for_ids_size = 0;
 char *for_ids_array[100];
 
 int no_more_input_tags = 0;
+int expected_checkboxes_count = 0;
+int checkboxes_count = 0;
 %}
 
 %define parse.error verbose
@@ -151,19 +154,31 @@ img: IMG_START attributes TAG_END {
     }
 
 form: FORM_OPEN_START attributes TAG_END {
-        int rule_count = 1;
+        int rule_count = 2;
         AttributeRule rules[rule_count];
         rules[0] = new_attribute_rule("id", 1, 0);
+        rules[1] = new_attribute_rule("checkboxc", 1, 1);
         check_attributes(attributes, "form", rule_count, rules);
 
         char *id = find_attribute("id", attributes)->value;
         append_id(ids, id, "form");
 
+        Attribute *checkboxc = find_attribute("checkboxc", attributes);
+        if (checkboxc != NULL) {
+            expected_checkboxes_count = atoi(checkboxc->value);
+        }
+
         array_reset(attributes);
 
         no_more_input_tags = 0;
+        checkboxes_count = 0;
     }
-    form_content FORM_CLOSE
+    form_content FORM_CLOSE {
+        if (expected_checkboxes_count != 0 && expected_checkboxes_count != checkboxes_count) {
+            yyerror("Attribute's 'checkboxc' value doesn't match with the number of checkboxes in the form.");
+        }
+        expected_checkboxes_count = 0;
+    }
 form_content: label optional_form_content
             | input optional_form_content
 optional_form_content: %empty
@@ -202,6 +217,10 @@ input: INPUT_START attributes TAG_END {
         append_id(ids, id, "input");
 
         char *type = find_attribute("type", attributes)->value;
+
+        if (strcmp(type, "checkbox") == 0) {
+            checkboxes_count += 1;
+        }
 
         if (no_more_input_tags == 1) {
             yyerror("Tag 'form' should contain one 'input' tag of 'type' 'submit' at most.");

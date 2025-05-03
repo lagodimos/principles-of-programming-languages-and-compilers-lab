@@ -52,6 +52,7 @@ void check_if_is_valid_url(char attribute[], char value[]);
 
 void check_style_attr(char value[]);
 void check_type_attr(char value[]);
+void check_checkboxc_attr(char value[]);
 
 void required_attribute_not_found(const char tag[], const char name[]);
 void exceeded_occur(const char tag[], const char name[], int max);

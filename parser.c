@@ -256,6 +256,10 @@ void check_attributes(Array attributes_array, const char tag[], int rule_count, 
         if (strcmp(attributes[i].name, "type") == 0) {
             check_type_attr(attributes[i].value);
         }
+
+        if (strcmp(attributes[i].name, "checkboxc") == 0) {
+            check_checkboxc_attr(attributes[i].value);
+        }
     }
 
     for (int i = 0; i < rule_count; i++) {
@@ -402,8 +406,6 @@ void check_style_attr(char value[]) {
             yyerror("In style attribute properties must be be separated by ';'.");
         }
     }
-
-    exit(0);
 }
 
 void check_type_attr(char value[]) {
@@ -419,6 +421,25 @@ void check_type_attr(char value[]) {
 
     sprintf(error, "Attribute type must have a value of 'text'/'checkbox'/'radio'/'submit'.");
     yyerror(error);
+}
+
+void check_checkboxc_attr(char value[]) {
+    int len = strlen(value);
+    int is_zero = 1;
+
+    for (int i = 0; i < len; i++) {
+        if (! isdigit(value[i])) {
+            yyerror("Attribute 'checkboxc' must be a positive integer.");
+        }
+
+        if (value[i] != '0') {
+            is_zero = 0;
+        }
+    }
+
+    if (is_zero == 1) {
+        yyerror("Attribute 'checkboxc' can't be zero.");
+    }
 }
 
 void required_attribute_not_found(const char tag[], const char name[]) {
