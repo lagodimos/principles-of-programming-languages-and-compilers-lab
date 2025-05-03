@@ -127,6 +127,13 @@ extern char text[];
     return LABEL_CLOSE;
 }
 
+<INITIAL,ATTRIBUTES>"<!--"([^-]|-[^-])*"-->" {
+    if (YYSTATE == ATTRIBUTES) {
+        printf("Comments are not allowed inside of start/end tags attributes.\n");
+        exit(1);
+    }
+}
+
 <ATTRIBUTES>">" {
     printf("OPEN_TAG_END:\t\t|%s\n", yytext);
     BEGIN(INITIAL);
