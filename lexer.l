@@ -10,6 +10,8 @@ extern Array attributes_array;
 extern char text[];
 %}
 
+%option yylineno
+
 %x ATTRIBUTES
 
 %%

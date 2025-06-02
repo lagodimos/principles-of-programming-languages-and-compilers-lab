@@ -1,5 +1,7 @@
 #pragma once
 
+extern int yylineno;
+
 typedef struct attribute {
     char *name;
     char *value;
