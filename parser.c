@@ -464,6 +464,6 @@ void invalid_attribute(const char tag[], const char name[]) {
 }
 
 void yyerror(const char s[]) {
-    fprintf(stderr, "Error: %s\n", s);
+    fprintf(stderr, "In line %d:\nError: %s\n", yylineno, s);
     exit(1);
 }
