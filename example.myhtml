@@ -18,7 +18,7 @@
       <input type="text" id="name">
       <label id="label2" for="lastname">Last Name:</label>
       <input type="text" id="lastname">
-      <input id="submit" type="Submit" value='Submit "it"'>
+      <input id="submit" type="submit" value='Submit "it"'>
     </form>
   </body>
 </MYHTML>
